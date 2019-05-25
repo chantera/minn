@@ -5,7 +5,8 @@ import sys
 
 import numpy as np
 
-import nn
+import minn
+import minn.functions as F
 
 
 class Vocab(object):
@@ -60,20 +61,20 @@ class Loader(object):
             yield words
 
 
-class RNNLanguageModel(nn.Model):
+class RNNLanguageModel(minn.Model):
 
     def __init__(self, vocab_size, embed_dim, hidden_dim):
         super().__init__()
-        self.E = nn.Parameter((embed_dim, vocab_size))
-        self.U = nn.Parameter((hidden_dim, embed_dim))
-        self.W = nn.Parameter((hidden_dim, hidden_dim))
-        self.b1 = nn.Parameter((hidden_dim,))
-        self.V = nn.Parameter((vocab_size, hidden_dim))
-        self.b2 = nn.Parameter((vocab_size,))
+        self.E = minn.Parameter((embed_dim, vocab_size))
+        self.U = minn.Parameter((hidden_dim, embed_dim))
+        self.W = minn.Parameter((hidden_dim, hidden_dim))
+        self.b1 = minn.Parameter((hidden_dim,))
+        self.V = minn.Parameter((vocab_size, hidden_dim))
+        self.b2 = minn.Parameter((vocab_size,))
         self._vocab_size = vocab_size
 
     def initialize(self):
-        initializer = nn.NormalInitializer()
+        initializer = minn.initializers.NormalInitializer()
         self.E.initialize(initializer)
         self.U.initialize(initializer)
         self.W.initialize(initializer)
@@ -82,20 +83,21 @@ class RNNLanguageModel(nn.Model):
         self.b2.initialize(0.)
 
     def forward(self, x):
-        E = nn.parameter(self.E)
-        U = nn.parameter(self.U)
-        W = nn.parameter(self.W)
-        b1 = nn.parameter(self.b1)
-        V = nn.parameter(self.V)
-        b2 = nn.parameter(self.b2)
+        E = F.parameter(self.E)
+        U = F.parameter(self.U)
+        W = F.parameter(self.W)
+        b1 = F.parameter(self.b1)
+        V = F.parameter(self.V)
+        b2 = F.parameter(self.b2)
 
-        s = nn.input(nn.xp.zeros((1, U.shape[0]), dtype=nn.xp.float32))
+        xp = minn.get_device().xp
+        s = F.input(xp.zeros((1, U.shape[0]), dtype=xp.float32))
         y = []
         for x_t in x:
-            onehot = nn.xp.zeros((1, self._vocab_size), dtype=nn.xp.float32)
+            onehot = xp.zeros((1, self._vocab_size), dtype=xp.float32)
             onehot[:, x_t] = 1.
-            w = nn.input(onehot) @ E.T
-            s = nn.sigmoid(w @ U.T + s @ W.T + b1)
+            w = F.input(onehot) @ E.T
+            s = F.sigmoid(w @ U.T + s @ W.T + b1)
             y_t = s @ V.T + b2
             y.append(y_t)
         return y
@@ -105,7 +107,7 @@ class RNNLanguageModel(nn.Model):
         t = t.reshape((t.size, 1))
         loss = 0.0
         for y_t, t_t in zip(y, t):
-            loss += nn.softmax_cross_entropy(y_t, t_t)
+            loss += F.softmax_cross_entropy(y_t, t_t)
         return loss
 
 
@@ -137,7 +139,7 @@ def train(train_file,
         embed_dim=100,
         hidden_dim=64)
     model.initialize()
-    optimizer = nn.SGD(learning_rate)
+    optimizer = minn.optimizers.SGD(learning_rate)
     optimizer.add(model)
 
     def process(sentences, train):
@@ -145,7 +147,7 @@ def train(train_file,
         processed = 0
         num_samples = len(sentences)
         for batch in get_batches(sentences, batch_size, shuffle=train):
-            nn.clear_graph()
+            minn.clear_graph()
             batch_loss = 0.0
             for words in batch:
                 x, t = words[:-1], words[1:]
@@ -203,7 +205,7 @@ if __name__ == '__main__':
         format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     if args.seed is not None:
         np.random.seed(args.seed)
-        nn.xp.random.seed(args.seed)
+        # minn.xp.random.seed(args.seed)
     train(args.train_file,
           args.valid_file,
           args.epoch,
