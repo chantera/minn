@@ -5,6 +5,19 @@ from minn.devices import get_device_from_array
 from minn.core import FunctionNode, Parameter, Variable
 
 
+def _force_array(x, dtype=None):
+    if np.isscalar(x):
+        if dtype is None:
+            return np.array(x)
+        else:
+            return np.array(x, dtype)
+    else:
+        if dtype is None:
+            return x
+        else:
+            return x.astype(dtype, copy=False)
+
+
 class Input(FunctionNode):
 
     def __init__(self, data):
@@ -18,7 +31,7 @@ class Input(FunctionNode):
 
 
 def input(x, graph=None):
-    return get_graph(graph).apply(Input(x), [])[0]
+    return get_graph(graph).apply(Input(_force_array(x)), [])[0]
 
 
 class InputParameter(FunctionNode):
@@ -46,7 +59,7 @@ class Add(FunctionNode):
 
     def forward(self, x):
         x1, x2 = x
-        return x1 + x2,
+        return _force_array(x1 + x2),
 
     def backward(self, gy, x, y):
         x1, x2 = x
@@ -62,11 +75,10 @@ class Add(FunctionNode):
 
 
 def add(x1, x2):
-    xp = get_device_from_array(x1.data).xp
     if not isinstance(x1, Variable):
-        x1 = input(xp.array(x1, dtype=xp.float32))
+        x1 = input(x1)
     if not isinstance(x2, Variable):
-        x2 = input(xp.array(x2, dtype=xp.float32))
+        x2 = input(x2)
     return x1._g().apply(Add(), (x1, x2))[0]
 
 
@@ -78,8 +90,8 @@ class Matmul(FunctionNode):
         assert x2.ndim == 2
 
     def forward(self, x):
-        xp = get_device_from_array(x).xp
         x1, x2 = x
+        xp = get_device_from_array(x1).xp
         return xp.dot(x1, x2),
 
     def backward(self, gy, x, y):
@@ -207,11 +219,11 @@ class SoftmaxCrossEntropy:
 
     def forward(self, x):
         x, t = x
-        xp = get_device_from_array(x).xp
         batch_size = t.shape[0]
         log_y = LogSoftmax().forward((x,))[0]
-        y = -xp.sum(log_y[np.arange(batch_size), t]) / batch_size
-        return y,
+        log_p = log_y[np.arange(batch_size), t]
+        y = -log_p.sum(keepdims=True) / batch_size
+        return y.reshape(()),
 
     def backward(self, gy, x, y):
         t = x[1]

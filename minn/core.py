@@ -1,9 +1,6 @@
 import weakref
 
-
-from minn._internal import get_device
-from minn.devices import get_device_from_array
-import minn.functions
+import minn
 
 
 class Device(object):
@@ -99,7 +96,7 @@ class VariableNode(object):
     __slots__ = ('_device', 'data', 'grad')
 
     def __init__(self, data):
-        self._device = weakref.ref(get_device_from_array(data))
+        self._device = weakref.ref(minn.devices.get_device_from_array(data))
         self.data = data
         self.grad = None
 
@@ -142,7 +139,7 @@ class Parameter(object):
     __slots__ = ('_device', 'data', 'grad', '_initialized')
 
     def __init__(self, shape, device=None):
-        device = get_device(device)
+        device = minn._internal.get_device(device)
         xp = device.xp
         self._device = weakref.ref(device)
         self.data = xp.empty(shape, dtype=xp.float32)

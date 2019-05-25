@@ -1,6 +1,3 @@
-import numpy
-
-
 from minn import devices  # NOQA
 from minn import functions  # NOQA
 from minn import initializers  # NOQA
@@ -21,13 +18,6 @@ from minn._internal import get_graph  # NOQA
 from minn._internal import set_graph  # NOQA
 
 
-class CPU(core.Device):
-
-    @property
-    def xp(self):
-        return numpy
-
-
 functions._install_variable_arithmetics()
-set_device(CPU())
+set_device(devices.CPU())
 set_graph(Graph())
