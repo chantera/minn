@@ -27,7 +27,7 @@ class CUDA(Device):
                 if not available:
                     raise RuntimeError("CUDA device is not available")
                 device = super().__new__(cls)
-                device._dev = cupy.Device(device_id)
+                device._dev = cupy.cuda.Device(device_id)
                 cls.__devices[device_id] = device
             return device
 
