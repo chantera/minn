@@ -41,20 +41,8 @@ class Graph(object):
         for op in self._ops[v._oid::-1]:
             if all(node.grad is None for node in op.rets):
                 continue
-            y, gy = [], []
-            for node in op.rets:
-                if node.grad is None:
-                    node.grad = node.xp.zeros_like(node.data)
-                y.append(node.data)
-                gy.append(node.grad)
-            x, gx = [], []
-            for v in op.args:
-                node = self._ops[v._oid].rets[v._vid]
-                if node.grad is None:
-                    node.grad = node.xp.zeros_like(node.data)
-                x.append(node.data)
-                gx.append(node.grad)
-            grads = op.f.backward(tuple(gy), x, y)
+            x, gx, y, gy = self._gather_op_io(op)
+            grads = op.f.backward(gy, x, y)
             if not isinstance(grads, tuple):
                 raise TypeError(
                     "{}.backward must return tuple"
@@ -65,9 +53,25 @@ class Graph(object):
                     .format(op.f.__class__.__name__, len(gx)))
             for i, grad in enumerate(grads):
                 if grad is not None:
-                    gx[i] += grad
+                    gx[i][...] += grad
             for node in op.rets:
                 node.grad = None
+
+    def _gather_op_io(self, op):
+        y, gy = [], []
+        for node in op.rets:
+            if node.grad is None:
+                node.grad = node.xp.zeros_like(node.data)
+            y.append(node.data)
+            gy.append(node.grad)
+        x, gx = [], []
+        for v in op.args:
+            node = self._ops[v._oid].rets[v._vid]
+            if node.grad is None:
+                node.grad = node.xp.zeros_like(node.data)
+            x.append(node.data)
+            gx.append(node.grad)
+        return tuple(x), tuple(gx), tuple(y), tuple(gy)
 
     def get_data(self, v):
         self._check_var(v)
