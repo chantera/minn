@@ -74,12 +74,22 @@ class Add(FunctionNode):
         return gx1, gx2
 
 
-def add(x1, x2):
-    if not isinstance(x1, Variable):
-        x1 = input(x1)
-    if not isinstance(x2, Variable):
-        x2 = input(x2)
-    return x1._g().apply(Add(), (x1, x2))[0]
+class AddConstant(FunctionNode):
+
+    def __init__(self, value):
+        self.value = value
+
+    def forward(self, x):
+        return _force_array(x[0] + x[0].dtype.type(self.value)),
+
+    def backward(self, gy, x, y):
+        return gy
+
+
+def add(lhs, rhs):
+    if np.isscalar(rhs):
+        return lhs._g().apply(AddConstant(rhs), (lhs,))[0]
+    return lhs._g().apply(Add(), (lhs, rhs))[0]
 
 
 class Matmul(FunctionNode):

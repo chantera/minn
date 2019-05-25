@@ -54,7 +54,7 @@ class Graph(object):
                     node.grad = node.xp.zeros_like(node.data)
                 x.append(node.data)
                 gx.append(node.grad)
-            grads = op.f.backward(gy, x, y)
+            grads = op.f.backward(tuple(gy), x, y)
             if not isinstance(grads, tuple):
                 raise TypeError(
                     "{}.backward must return tuple"
