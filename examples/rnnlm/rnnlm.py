@@ -103,7 +103,7 @@ class RNNLanguageModel(minn.Model):
         return y
 
     def loss(self, y, t):
-        assert len(y) == t.size
+        assert len(y) == len(t)
         t = t.reshape((t.size, 1))
         loss = 0.0
         for y_t, t_t in zip(y, t):
@@ -111,16 +111,20 @@ class RNNLanguageModel(minn.Model):
         return loss
 
 
-def get_batches(xs, batch_size, shuffle=False):
+def get_batches(xs, batch_size, pad_id, shuffle=False):
     num_samples = len(xs)
     indices = np.arange(num_samples)
     if shuffle:
         np.random.shuffle(indices)
     offset = 0
     while offset < num_samples:
-        x_batch = np.take(xs, indices[offset:offset + batch_size], axis=0)
+        samples = np.take(xs, indices[offset:offset + batch_size], axis=0)
+        max_len = max(len(x) for x in samples)
+        batch = np.full((len(samples), max_len), pad_id, dtype=np.int32)
+        for i, x in enumerate(samples):
+            batch[i, :x.size] = x
         offset += batch_size
-        yield x_batch
+        yield batch
 
 
 def train(train_file,
@@ -133,6 +137,7 @@ def train(train_file,
     valid_sents = None
     if valid_file:
         valid_sents = loader.load(valid_file, train=False)
+    eos_id = loader.eos_id
 
     model = RNNLanguageModel(
         vocab_size=len(loader.vocab),
@@ -146,18 +151,15 @@ def train(train_file,
         epoch_loss = 0.0
         processed = 0
         num_samples = len(sentences)
-        for batch in get_batches(sentences, batch_size, shuffle=train):
+        for batch in get_batches(sentences, batch_size, eos_id, shuffle=train):
             minn.clear_graph()
-            batch_loss = 0.0
-            for words in batch:
-                x, t = words[:-1], words[1:]
-                y = model.forward(x)
-                loss = model.loss(y, t)
-                batch_loss += loss
-                epoch_loss += loss.data * t.size
+            x, t = batch[:-1].T, batch[1:].T
+            y = model.forward(x)
+            loss = model.loss(y, t)
+            epoch_loss += loss.data * len(batch)
             if train:
                 optimizer.reset_gradients()
-                batch_loss.backward()
+                loss.backward()
                 optimizer.update()
             processed += len(batch)
             sys.stderr.write("{} / {} = {:.2f}%\r".format(
