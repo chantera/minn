@@ -27,7 +27,7 @@ class Input(FunctionNode):
         return self.data,
 
     def backward(self, gy, x, y):
-        return []
+        return tuple()
 
 
 def input(x, graph=None):
@@ -48,7 +48,7 @@ class InputParameter(FunctionNode):
 
     def backward(self, gy, x, y):
         self.param.grad += gy[0]
-        return []
+        return tuple()
 
 
 def parameter(x, graph=None):

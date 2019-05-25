@@ -25,7 +25,11 @@ class Graph(object):
         x = [self._ops[v._oid].rets[v._vid].data for v in args]
         if self._inspect:
             f.check_forward(x)
-        y_nodes = [VariableNode(data) for data in f.forward(x)]
+        outputs = f.forward(x)
+        if not isinstance(outputs, tuple):
+            raise TypeError(
+                "{}.forward must return tuple".format(f.__class__.__name__))
+        y_nodes = [VariableNode(data) for data in outputs]
         oid = len(self._ops)
         self._ops.append(Graph.Operation(f, args, y_nodes))
         return tuple(Variable(self, oid, i) for i in range(len(y_nodes)))
@@ -51,7 +55,14 @@ class Graph(object):
                 x.append(node.data)
                 gx.append(node.grad)
             grads = op.f.backward(gy, x, y)
-            assert len(grads) == len(gx)
+            if not isinstance(grads, tuple):
+                raise TypeError(
+                    "{}.backward must return tuple"
+                    .format(op.f.__class__.__name__))
+            elif len(grads) != len(gx):
+                raise ValueError(
+                    "the size of grads from {}.backward must be {}"
+                    .format(op.f.__class__.__name__, len(gx)))
             for i, grad in enumerate(grads):
                 if grad is not None:
                     gx[i] += grad
