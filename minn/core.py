@@ -3,14 +3,8 @@ import weakref
 import minn
 
 
-class Device(object):
-
-    @property
-    def xp(self):
-        raise NotImplementedError
-
-
 class Graph(object):
+    __slots__ = ('_ops', '_inspect', '__weakref__')
 
     class Operation(object):
         __slots__ = ('f', 'args', 'rets')
@@ -110,6 +104,8 @@ class VariableNode(object):
 
 
 class Variable(object):
+    __slots__ = ('_g', '_oid', '_vid')
+
     def __init__(self, g, oid, vid):
         self._g = weakref.ref(g)
         self._oid = oid
@@ -130,10 +126,6 @@ class Variable(object):
     def T(self):
         return minn.functions.transpose(self)
 
-
-# --------------------------------
-# Other Core classes
-# --------------------------------
 
 class Parameter(object):
     __slots__ = ('_device', 'data', 'grad', '_initialized')
@@ -203,6 +195,13 @@ class Model(object):
                     raise RuntimeError(
                         "parameter '{}' is not initialized".format(prefix))
                 yield prefix, param
+
+
+class Device(object):
+
+    @property
+    def xp(self):
+        raise NotImplementedError
 
 
 class Initializer(object):

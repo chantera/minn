@@ -198,14 +198,18 @@ if __name__ == '__main__':
         '--batchsize', metavar='NUM', type=int, default=32,
         dest='batch_size', help='batch size')
     parser.add_argument(
+        '--device', metavar='ID', type=int, default=-1, help='device id')
+    parser.add_argument(
         '--seed', metavar='NUM', type=int, help='random seed')
     args = parser.parse_args()
 
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
+    if args.device >= 0:
+        minn.set_device(minn.devices.CUDA(args.device))
     if args.seed is not None:
         np.random.seed(args.seed)
-        # minn.xp.random.seed(args.seed)
+        minn.get_device().xp.random.seed(args.seed)
     train(args.train_file,
           args.valid_file,
           args.epoch,
