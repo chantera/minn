@@ -9,5 +9,5 @@ class SGD(Optimizer):
         self.weight_decay_rate = weight_decay_rate
 
     def update(self):
-        for p in self._iter_params():
+        for p in self._params:
             p.data -= self.lr * p.grad + self.weight_decay_rate * p.data

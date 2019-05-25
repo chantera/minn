@@ -242,10 +242,3 @@ class Optimizer(object):
     def reset_gradients(self):
         for p in self._params:
             p.reset_gradient()
-
-    def _iter_params(self):
-        for p in self._params:
-            writeable = p.data.flags.writeable
-            p.data.flags.writeable = True
-            yield p
-            p.data.flags.writeable = writeable
