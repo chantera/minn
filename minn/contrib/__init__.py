@@ -3,6 +3,7 @@ from minn.contrib import devices  # NOQA
 from minn.contrib import functions  # NOQA
 from minn.contrib import initializers  # NOQA
 from minn.contrib import optimizers  # NOQA
+from minn.contrib import utils  # NOQA
 from minn.contrib.devices import get_device_from_array  # NOQA
 from minn.contrib._internal import get_device  # NOQA
 from minn.contrib._internal import set_device  # NOQA
