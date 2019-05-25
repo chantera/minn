@@ -6,7 +6,7 @@ import sys
 import numpy as np
 
 import minn
-import minn.functions as F
+import minn.contrib.functions as F
 
 
 class Vocab(object):

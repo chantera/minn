@@ -2,6 +2,7 @@ import threading
 
 from minn.core import Device
 
+
 available = False
 
 try:

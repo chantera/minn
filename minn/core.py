@@ -1,6 +1,6 @@
 import weakref
 
-import minn
+from minn import _internal
 
 
 class Graph(object):
@@ -113,7 +113,7 @@ class VariableNode(object):
     __slots__ = ('_device', 'data', 'grad')
 
     def __init__(self, data):
-        self._device = weakref.ref(minn.devices.get_device_from_array(data))
+        self._device = weakref.ref(_internal.get_device_from_array(data))
         self.data = data
         self.grad = None
 
@@ -145,16 +145,12 @@ class Variable(object):
     def shape(self):
         return self.data.shape
 
-    @property
-    def T(self):
-        return minn.functions.transpose(self)
-
 
 class Parameter(object):
     __slots__ = ('_device', 'data', 'grad', '_initialized')
 
     def __init__(self, shape, device=None):
-        device = minn._internal.get_device(device)
+        device = _internal.get_device(device)
         xp = device.xp
         self._device = weakref.ref(device)
         self.data = xp.empty(shape, dtype=xp.float32)

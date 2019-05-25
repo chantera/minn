@@ -1,7 +1,7 @@
 import numpy as np
 
-from minn._internal import get_graph
-from minn.devices import get_device_from_array
+from minn.contrib._internal import get_graph
+from minn.contrib.devices import get_device_from_array
 from minn.core import FunctionNode, Parameter, Variable
 
 
@@ -117,10 +117,11 @@ def matmul(x1, x2):
     return x1._g().apply(Matmul(), (x1, x2))[0]
 
 
-def _install_variable_arithmetics():
+def _install_variable_methods():
     Variable.__add__ = add
     Variable.__radd__ = add
     Variable.__matmul__ = matmul
+    Variable.T = property(transpose)
 
 
 class Transpose(FunctionNode):

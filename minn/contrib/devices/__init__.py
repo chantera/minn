@@ -1,7 +1,7 @@
-from minn.devices.cpu import CPU
-from minn.devices.cpu import ndarray as _cpu_ndarray
-from minn.devices.cuda import CUDA
-from minn.devices.cuda import ndarray as _cuda_ndarray
+from minn.contrib.devices.cpu import CPU
+from minn.contrib.devices.cpu import ndarray as _cpu_ndarray
+from minn.contrib.devices.cuda import CUDA
+from minn.contrib.devices.cuda import ndarray as _cuda_ndarray
 
 
 def get_device_from_array(data):
