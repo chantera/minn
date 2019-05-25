@@ -26,9 +26,8 @@ class Graph(object):
         if self._inspect:
             f.check_forward(x)
         outputs = f.forward(x)
-        if not isinstance(outputs, tuple):
-            raise TypeError(
-                "{}.forward must return tuple".format(f.__class__.__name__))
+        if self._inspect:
+            self._check_forward_outputs(f, outputs)
         y_nodes = [VariableNode(data) for data in outputs]
         oid = len(self._ops)
         self._ops.append(Graph.Operation(f, args, y_nodes))
@@ -43,14 +42,8 @@ class Graph(object):
                 continue
             x, gx, y, gy = self._gather_op_io(op)
             grads = op.f.backward(gy, x, y)
-            if not isinstance(grads, tuple):
-                raise TypeError(
-                    "{}.backward must return tuple"
-                    .format(op.f.__class__.__name__))
-            elif len(grads) != len(gx):
-                raise ValueError(
-                    "the size of grads from {}.backward must be {}"
-                    .format(op.f.__class__.__name__, len(gx)))
+            if self._inspect:
+                self._check_backward_outputs(op, grads)
             for i, grad in enumerate(grads):
                 if grad is not None:
                     gx[i][...] += grad
@@ -85,6 +78,21 @@ class Graph(object):
         if v._oid >= len(self._ops) or v._vid >= len(self._ops[v._oid].rets):
             raise RuntimeError("invalid node")
         return
+
+    def _check_forward_outputs(self, f, outputs):
+        if not isinstance(outputs, tuple):
+            raise TypeError(
+                "{}.forward must return tuple".format(f.__class__.__name__))
+
+    def _check_backward_outputs(self, op, outputs):
+        if not isinstance(outputs, tuple):
+            raise TypeError(
+                "{}.backward must return tuple"
+                .format(op.f.__class__.__name__))
+        elif len(outputs) != len(op.args):
+            raise ValueError(
+                "the size of outputs from {}.backward must be {}"
+                .format(op.f.__class__.__name__, len(op.args)))
 
 
 class FunctionNode(object):
