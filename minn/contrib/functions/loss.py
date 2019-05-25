@@ -2,6 +2,7 @@ import numpy as np
 
 from minn.contrib.functions.activation import LogSoftmax
 from minn.contrib.functions.activation import Softmax
+from minn.contrib.functions.node import input
 from minn.core import FunctionNode
 from minn.core import Variable
 
