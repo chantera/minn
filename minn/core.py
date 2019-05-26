@@ -98,7 +98,6 @@ class Graph(object):
                 .format(op.f.__class__.__name__, len(op.args)))
 
 
-@profile
 def _reduce_grad(node):
     if len(node.grad) > 0:
         grad = node.grad[0]
