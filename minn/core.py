@@ -46,8 +46,9 @@ class Graph(object):
                 self._check_backward_outputs(op, grads)
             for i, grad in enumerate(grads):
                 if grad is not None:
-                    gx[i][...] += grad
+                    gx[i].append(grad)
             for node in op.rets:
+                del node.grad
                 node.grad = None
 
     def _gather_op_io(self, op):
@@ -55,13 +56,15 @@ class Graph(object):
         for node in op.rets:
             if node.grad is None:
                 node.grad = node.xp.zeros_like(node.data)
+            elif isinstance(node.grad, list):
+                _reduce_grad(node)
             y.append(node.data)
             gy.append(node.grad)
         x, gx = [], []
         for v in op.args:
             node = self._ops[v._oid].rets[v._vid]
             if node.grad is None:
-                node.grad = node.xp.zeros_like(node.data)
+                node.grad = []
             x.append(node.data)
             gx.append(node.grad)
         return tuple(x), tuple(gx), tuple(y), tuple(gy)
@@ -93,6 +96,23 @@ class Graph(object):
             raise ValueError(
                 "the size of outputs from {}.backward must be {}"
                 .format(op.f.__class__.__name__, len(op.args)))
+
+
+@profile
+def _reduce_grad(node):
+    if len(node.grad) > 0:
+        grad = node.grad[0]
+        if node.grad[0].shape != node.data.shape:
+            grad = node.zeros_like(node.data) + grad
+        for g in node.grad[1:]:
+            if g.shape == grad.shape:
+                grad += g
+            else:
+                grad = g + grad
+        del node.grad
+        node.grad = grad
+    else:
+        node.grad = None
 
 
 class FunctionNode(object):
