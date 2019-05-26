@@ -31,19 +31,19 @@ class Loader(object):
 
     def __init__(self, unknown_word='<UNK>'):
         self.vocab = Vocab()
-        self.unk_id = self.vocab.add(unknown_word)
-        self.bos_id = self.vocab.add('<BOS>')
-        self.eos_id = self.vocab.add('<EOS>')
+        self.unk_id = self.vocab.add(self.preprocess(unknown_word))
+        self.bos_id = self.vocab.add(self.preprocess('<BOS>'))
+        self.eos_id = self.vocab.add(self.preprocess('<EOS>'))
+
+    def preprocess(self, x):
+        return x.lower()
 
     def load(self, file, train=False):
-        def preprocess(x):
-            return x.lower()
-
         def map(words):
             if train:
-                return [self.vocab.add(preprocess(w)) for w in words]
+                return [self.vocab.add(self.preprocess(w)) for w in words]
             else:
-                return [self.vocab.get(preprocess(w), self.unk_id)
+                return [self.vocab.get(self.preprocess(w), self.unk_id)
                         for w in words]
 
         reader = self._gen_reader(file)
