@@ -166,7 +166,7 @@ def train(train_file,
                 processed, num_samples, (processed / num_samples) * 100))
             sys.stderr.flush()
         print("", file=sys.stderr)
-        ppl = float(epoch_loss) / sum(len(s) - 1 for s in sentences)
+        ppl = np.exp(float(epoch_loss) / sum(len(s) - 1 for s in sentences))
         return ppl
 
     do_validation = valid_sents is not None
